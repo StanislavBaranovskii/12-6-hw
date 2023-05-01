@@ -31,6 +31,14 @@
 
 *Приложите скриншоты конфигурации, выполнения работы: состояния и режимы работы серверов.*
 
+<details open>
+
+  <summary>click to collapse</summary>
+
+  this one starts expanded because of the "open"
+
+</details>
+
 ---
 
 ## Задание 3* 
@@ -38,5 +46,16 @@
 Выполните конфигурацию master-master репликации. Произведите проверку.
 
 *Приложите скриншоты конфигурации, выполнения работы: состояния и режимы работы серверов.*
+
+<details><summary>stuff with *mark* **down**</summary><p>
+
+## _formatted_ **heading** with [a](link)
+
+---
+{{standard 3-backtick code block omitted from here due to escaping issues}}
+---
+
+Collapsible until here.
+</p></details>
 
 ---
