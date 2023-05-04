@@ -67,50 +67,61 @@ sudo docker network ls
 ```
 ### Настройка mysql-серверов
 ```bash
-#Master :
-sudo docker exec replication-master apt update && sudo docker exec replication-master apt install -y nano
+## MASTER :
+#
+#sudo docker exec replication-master apt update && sudo docker exec replication-master apt install -y nano
 sudo docker exec -it replication-master mysql
   CREATE USER 'replication'@'%';
   GRANT REPLICATION SLAVE ON *.* TO 'replication'@'%';
   exit
 
-sudo docker exec -it replication-master bash
-  nano /etc/mysql/my.cnf  #
+#sudo docker exec -it replication-master bash
+#  nano /etc/mysql/my.cnf  #
 
-sudo docker cp replication-master:/etc/mysql/my.cnf /tmp/my_master.cnf
+#Отредактировал и скопировал файл my.cnf из хостовой ОС в контейнер:
+sudo docker cp /tmp/my_master.cnf replication-master:/etc/mysql/my.cnf
 
 sudo docker restart replication-master
 sudo docker exec -it replication-master mysql
   SHOW MASTER STATUS;
+
+  create database world;
+  use database world;
+  create table city (id INT PRIMARY KEY AUTO_INCREMENT, Name varchar(100), CountryCode varchar(10), District varchar(100), Population int);
+  #insert into test_table (Name, CountryCode, District, Population) values ('Test-Replication', 'ALB', 'Test', 42);
+  commit;
+
   FLUSH TABLES WITH READ LOCK;
   exit
 
 sudo docker exec replication-master mysqldump world > /tmp/world.sql
+
 sudo docker exec -it replication-master mysql
   SHOW MASTER STATUS;
   UNLOCK TABLES;
   exit
 
-#Slave :
-sudo docker exec replication-slave apt update && sudo docker exec replication-slave apt install -y nano
-sudo docker cp /tmp/world.sql replication-slave:/tmp/world.sql
+## SLAVE :
+#
+#sudo docker exec replication-slave apt update && sudo docker exec replication-slave apt install -y nano
+sudo docker cp /tmp/world.sql replication-slave:/world.sql
 sudo docker exec -it replication-slave mysql
   CREATE DATABASE `world`;
   exit
 
 sudo docker exec -it replication-slave bash
-  mysql world < /tmp/world.sql
+  mysql world < /world.sql
 
-sudo docker exec -it replication-slave bash
-  nano /etc/mysql/my.cnf
+#sudo docker exec -it replication-slave bash
+#  nano /etc/mysql/my.cnf
 
-sudo docker cp replication-slave:/etc/mysql/my.cnf /tmp/my_slave.cnf
+#Отредактировал и скопировал файл my.cnf из хостовой ОС в контейнер:
+sudo docker cp /tmp/my_slave.cnf replication-slave:/etc/mysql/my.cnf
 
 sudo docker restart replication-slave
 sudo docker exec -it replication-slave mysql
   CHANGE MASTER TO MASTER_HOST='replication-master',
-  MASTER_USER='replication', MASTER_LOG_FILE='mysql-bin.000001',
-  MASTER_LOG_POS=156;
+  MASTER_USER='replication', MASTER_LOG_FILE='mysql-bin.000001', MASTER_LOG_POS=650;
   START SLAVE;
   SHOW SLAVE STATUS\G
   exit
@@ -118,17 +129,17 @@ sudo docker exec -it replication-slave mysql
 ```
 ### Тестирование репликации
 
-<details><summary>Тестирование репликации. БД sakila-db</summary>
+<details><summary>Тестирование репликации</summary>
 
 ```bash
-#Master :
+## MASTER :
 docker exec -it replication-master mysql
   USE world;
-  INSERT INTO city (Name, CountryCode, District, Population) VALUES
-  ('Test-Replication', 'ALB', 'Test', 42);
+  INSERT INTO city (Name, CountryCode, District, Population) VALUES ('Test-Replication', 'ALB', 'Test', 42);
+  commit;
   exit
 
-#Slave :
+## SLAVE :
 docker exec -it replication-slave mysql
   USE world;
   SELECT * FROM city ORDER BY ID DESC LIMIT 10;
@@ -136,9 +147,11 @@ docker exec -it replication-slave mysql
 ```
 </details>
 
+Конфигурационные файлы: [my_master.cnf](https://github.com/StanislavBaranovskii/12-6-hw/blob/main/configs/my_master.cnf) и [my_slave.cnf](https://github.com/StanislavBaranovskii/12-6-hw/blob/main/configs/my_slave.cnf) 
 
+![Скриншот состояния и режимы работы master](https://github.com/StanislavBaranovskii/12-6-hw/blob/main/img/12-6-2-1.png "Скриншот состояния и режимы работы master")
 
-![Скриншот состояния и режимы работы серверов](https://github.com/StanislavBaranovskii/12-6-hw/blob/main/img/12-6-2.png "Скриншот состояния и режимы работы серверов")
+![Скриншот состояния и режимы работы slave](https://github.com/StanislavBaranovskii/12-6-hw/blob/main/img/12-6-2-2.png "Скриншот состояния и режимы работы slave")
 
 ---
 
